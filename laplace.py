@@ -2,51 +2,34 @@ from scipy.integrate import quad
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Define alpha parameter for the exponential decay
-alpha = 2
-
-# Define the time domain signal h(t) = e^(-alpha * t) * u(t)
 def time_domain_signal(t, alpha):
     return np.exp(-alpha * t) * (t >= 0)
 
-# Define the Laplace transform of the signal (analytical for validation)
 def laplace_transform(f, s, alpha):
-    """Numerical Laplace transform using integration."""
-    result, _ = quad(lambda t: f(t, alpha) * np.exp(-s * t), 0, np.inf)
+    result, _ = quad(lambda tau: f(tau, alpha)*np.exp(-s*tau), 0, np.inf)
     return result
 
-
-
-
-def plot(**kwargs):
-# Plot the time-domain signal
-    plt.figure(figsize=(12, 6))
-    plt.subplot(2, 1, 1)
-    plt.plot(t, h_t, label=f"Time-Domain Signal: $e^{{-{alpha}t}}$")
-    plt.title("Time-Domain Signal")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Amplitude")
+def plot_signals(s_values, H_s_numeric, H_s_analytic, alpha):
+    plt.figure(figsize=(8,6))
+    plt.plot(s_values, H_s_numeric.real, label="Numeric")
+    plt.plot(s_values, H_s_analytic.real, 'r--', label="Analytic")
+    plt.title(f"H(s) Along Real Axis (alpha={alpha})")
+    plt.xlabel("s (Real)")
+    plt.ylabel("H(s)")
     plt.grid()
     plt.legend()
-
-# Plot the frequency-domain signal
-    plt.subplot(2, 1, 2)
-    plt.plot(s_values.imag, np.abs(H_s_numeric), label="Laplace Transform Magnitude (Numeric)")
-    plt.title("Frequency-Domain Response")
-    plt.xlabel("Frequency (rad/s)")
-    plt.ylabel("|H(s)|")
-    plt.grid()
-    plt.legend()
-
-    plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":
     for alpha in [1,2]:
-        # Generate time-domain signal
-        t = np.linspace(0, 10, 500)
-        h_t = time_domain_signal(t, alpha)
-        # Frequency-domain calculation
-        s_values = 1j * np.linspace(0.01, 20, 500)  # Purely imaginary axis for frequency response
+        # 沿实轴选择 s，起点要大于 -alpha 以保证收敛
+        s_values = np.linspace(-alpha+0.1, 10, 500)
+
+        # 数值求拉普拉斯变换
         H_s_numeric = np.array([laplace_transform(time_domain_signal, s, alpha) for s in s_values])
-        plot()
+
+        # 解析解
+        H_s_analytic = 1.0/(s_values + alpha)
+
+        # 绘制
+        plot_signals(s_values, H_s_numeric, H_s_analytic, alpha)
